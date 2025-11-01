@@ -119,7 +119,7 @@ $products = Product::applySmartFilters($filters)->get();
 $products = Product::filterFromRequest()->paginate(20);
 ```
 
-Or specify allowed filters:
+specify allowed filters:
 
 ```php
 $products = Product::filterFromRequest([
