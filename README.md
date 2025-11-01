@@ -1,19 +1,31 @@
-# 🚀 Laravel Smart Search
+<p align="center">
+<img src="https://via.placeholder.com/1500x500/3B82F6/FFFFFF?text=Laravel+Smart+Filter" alt="Laravel Smart Filter" width="100%">
+</p>
 
-Laravel Smart Search is a **high-performance, intelligent search package** for Laravel Eloquent models. It provides automatic relation discovery, configurable search depth, multiple search modes, and optimized queries for large datasets.
+<p align="center">
+<a href="https://packagist.org/packages/sharifuddin/laravel-smart-filter"><img src="https://img.shields.io/packagist/v/sharifuddin/laravel-smart-filter" alt="Latest Version"></a>
+<a href="https://packagist.org/packages/sharifuddin/laravel-smart-filter"><img src="https://img.shields.io/packagist/dt/sharifuddin/laravel-smart-filter" alt="Total Downloads"></a>
+<a href="https://github.com/sharifuddin/laravel-smart-filter/actions"><img src="https://img.shields.io/github/actions/workflow/status/sharifuddin/laravel-smart-filter/tests.yml" alt="Build Status"></a>
+<a href="https://packagist.org/packages/sharifuddin/laravel-smart-filter"><img src="https://img.shields.io/packagist/l/sharifuddin/laravel-smart-filter" alt="License"></a>
+<a href="https://php.net"><img src="https://img.shields.io/badge/PHP-8.1%2B-777BB4" alt="PHP Version"></a>
+<a href="https://laravel.com"><img src="https://img.shields.io/badge/Laravel-10.x%2B-FF2D20" alt="Laravel Version"></a>
+</p>
 
 ---
 
-## ✨ Key Features
+## 🚀 Introduction
 
-- 🔍 **Smart Relation Discovery** – Automatically searches through model relationships.
-- ⚡ **High Performance** – Optimized queries with configurable limits.
-- 🎯 **Multiple Search Modes** – `like`, `exact`, `starts_with`, `ends_with`.
-- 🔧 **Fully Configurable** – Customize search behavior and priorities.
-- 📚 **Priority Columns** – Define columns to prioritize for better results.
-- 🛡️ **Type Safe** – Full type hints, PHPStan ready.
-- 🧪 **Fully Tested** – Comprehensive test coverage included.
-- 🔌 **Laravel Native** – Seamless integration with Eloquent models.
+**Laravel Smart Filter** is a powerful and flexible filtering engine for Eloquent models.  
+It enables dynamic, request-driven filtering across columns and relationships — with support for multiple operators, data types, and nested relations.
+
+### ✨ Features
+
+- ⚡ **Dynamic Filtering** — Filter data using arrays or request parameters
+- 🔍 **Relation Filtering** — Automatically filters related models
+- 🧩 **Multiple Operators** — `=`, `!=`, `>`, `<`, `like`, `in`, `between`, `null`, etc.
+- ⚙️ **Type-Aware Parsing** — Handles string, numeric, boolean, and date types
+- 🔄 **Request Integration** — Parse filters directly from HTTP requests
+- 🧪 **Fully Tested & Configurable** — Comprehensive test coverage and flexible config
 
 ---
 
@@ -21,30 +33,26 @@ Laravel Smart Search is a **high-performance, intelligent search package** for L
 
 ### Requirements
 
-- PHP 8.1+
-- Laravel 10.x, 11.x or 12x
+- PHP 8.1 or higher
+- Laravel 10.x, 11.x, or 12.x
 
-### Via Composer
+### Install via Composer
 
 ```bash
-composer require sharif/laravel-smart-search
+composer require sharifuddin/laravel-smart-filter
 ```
 
-````
-
-### Publish Configuration (Optional)
+### (Optional) Publish Configuration
 
 ```bash
-php artisan vendor:publish --provider="Sharifuddin\\LaravelSmartFilter\\SmartSearchServiceProvider" --tag="smart-search-config"
+php artisan vendor:publish --provider="Sharifuddin\\LaravelSmartFilter\\SmartFilterServiceProvider" --tag="smart-filter-config"
 ```
 
 ---
 
 ## 🎯 Quick Start
 
-### 1️⃣ Use the Trait
-
-Add the `SmartSearch` trait to your Eloquent models:
+### 1️⃣ Add the Trait to a Model
 
 ```php
 <?php
@@ -52,120 +60,159 @@ Add the `SmartSearch` trait to your Eloquent models:
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Sharifuddin\LaravelSmartFilter\Traits\SmartSearch;
+use Sharifuddin\LaravelSmartFilter\Traits\SmartFilter;
 
 class Product extends Model
 {
-    use SmartSearch;
+    use SmartFilter;
+
+    public function getFilterableFields(): array
+    {
+        return [
+            'name' => ['operator' => 'like', 'type' => 'string'],
+            'price' => ['operator' => 'between', 'type' => 'float'],
+            'category_id' => ['operator' => 'in', 'type' => 'integer'],
+            'is_active' => ['operator' => '=', 'type' => 'boolean'],
+            'created_at' => ['operator' => 'date', 'type' => 'date'],
+        ];
+    }
+
+    public function getFilterableRelations(): array
+    {
+        return [
+            'category' => [
+                'fields' => ['name', 'slug'],
+                'max_depth' => 1,
+            ],
+            'brand' => [
+                'fields' => ['name', 'description'],
+                'max_depth' => 1,
+            ],
+        ];
+    }
 }
-```
-
-### 2️⃣ Basic Search Usage
-
-```php
-// Simple search
-$products = Product::applySmartSearch('laptop')->get();
-
-// Paginated search
-$products = Product::applySmartSearch($request->input('search'))->paginate(15);
-
-// Search with relations
-$products = Product::applySmartSearch('apple')->with('brand', 'categories')->get();
 ```
 
 ---
 
-## 🔧 Configuration
+## 🧩 Usage Examples
 
-After publishing, edit `config/smart-search.php` to customize behavior:
+### 🔹 Basic Filtering
+
+```php
+$filters = [
+    'name' => ['value' => 'Laptop', 'operator' => 'like', 'type' => 'string'],
+    'price' => ['value' => [100, 1000], 'operator' => 'between', 'type' => 'float'],
+    'is_active' => ['value' => true, 'operator' => '=', 'type' => 'boolean'],
+];
+
+$products = Product::applySmartFilters($filters)->get();
+```
+
+---
+
+### 🔹 Filter from HTTP Request
+
+```php
+// Example URL: /products?name=Laptop&price_min=100&price_max=1000&category_id=1,2,3
+
+$products = Product::filterFromRequest()->paginate(20);
+```
+
+Or specify allowed filters:
+
+```php
+$products = Product::filterFromRequest([
+    'name' => ['operator' => 'like', 'type' => 'string'],
+    'price' => ['operator' => 'between', 'type' => 'float'],
+    'category_id' => ['operator' => 'in', 'type' => 'integer'],
+])->get();
+```
+
+---
+
+### 🔹 Relation Filtering
+
+```php
+$filters = [
+    'category.name' => ['value' => 'Electronics', 'operator' => 'like', 'type' => 'string'],
+    'brand.name' => ['value' => 'Apple', 'operator' => 'like', 'type' => 'string'],
+];
+
+$products = Product::applySmartFilters($filters)->get();
+```
+
+---
+
+### 🔹 Combined Example (Controller)
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Product;
+use Illuminate\Http\Request;
+
+class ProductController extends Controller
+{
+    public function index(Request $request)
+    {
+        $products = Product::filterFromRequest([
+                'name' => ['operator' => 'like', 'type' => 'string'],
+                'price' => ['operator' => 'between', 'type' => 'float'],
+                'category_id' => ['operator' => 'in', 'type' => 'integer'],
+                'is_active' => ['operator' => '=', 'type' => 'boolean'],
+            ])
+            ->with(['category', 'brand'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(24);
+
+        return view('products.index', compact('products'));
+    }
+}
+```
+
+---
+
+## ⚙️ Configuration
+
+**`config/smart-filter.php`**
 
 ```php
 return [
     'defaults' => [
-        'mode' => 'like',
         'deep' => true,
         'max_relation_depth' => 2,
-        'search_operator' => 'or',
+        'case_sensitive' => false,
+        'strict_mode' => false,
     ],
 
-    'columns' => [
-        'excluded' => [
-            'id', 'created_at', 'updated_at', 'deleted_at',
-            'password', 'remember_token', 'email_verified_at'
+    'fields' => [
+        'excluded' => ['id', 'created_at', 'updated_at', 'deleted_at', 'password'],
+        'default_operators' => [
+            'string' => 'like',
+            'integer' => '=',
+            'float' => '=',
+            'boolean' => '=',
+            'date' => '=',
+            'array' => 'in',
         ],
-        'prioritized' => ['name', 'title', 'code', 'email'],
-        'max_per_table' => 10,
     ],
 
-    'relations' => [
-        'auto_discover' => true,
-        'max_depth' => 2,
-        'excluded' => ['password', 'secret', 'tokens'],
+    'request' => [
+        'prefix' => '',
+        'array_delimiter' => ',',
+        'date_format' => 'Y-m-d',
     ],
 
     'performance' => [
         'max_join_tables' => 5,
-        'chunk_search' => false,
-        'chunk_size' => 1000,
+        'query_timeout' => 30,
+        'max_filters' => 20,
     ],
 ];
 ```
-
----
-
-## 💡 Usage Examples
-
-### Basic Search
-
-```php
-$users = User::applySmartSearch('john')->get();
-$products = Product::applySmartSearch('wireless keyboard')->paginate(20);
-```
-
-### Advanced Search with Options
-
-```php
-$results = Product::applySmartSearch(
-    search: 'laptop',
-    columns: ['name', 'sku', 'description'],
-    options: [
-        'mode' => 'like',
-        'deep' => true,
-        'max_relation_depth' => 1
-    ]
-)->get();
-```
-
-### Relation Search
-
-```php
-$posts = Post::applySmartSearch('laravel tips')->with('author', 'tags', 'comments')->get();
-```
-
-### Multiple Search Modes
-
-```php
-// Like (default)
-$results = Product::applySmartSearch('phone');
-
-// Exact match
-$results = User::applySmartSearch('admin@example.com', [], ['mode' => 'exact']);
-
-// Starts with
-$results = Product::applySmartSearch('APP', [], ['mode' => 'starts_with']);
-
-// Ends with
-$results = Product::applySmartSearch('001', [], ['mode' => 'ends_with']);
-```
-
----
-
-## ⚡ Performance Optimization
-
-- Add **indexes** for frequently searched columns.
-- Limit `max_relation_depth` for large datasets.
-- Disable `deep` option for simple queries.
-- Enable `chunk_search` in config for large tables.
 
 ---
 
@@ -175,39 +222,81 @@ $results = Product::applySmartSearch('001', [], ['mode' => 'ends_with']);
 # Run all tests
 composer test
 
-# Run tests with coverage
+# With coverage
 composer test-coverage
 ```
+
+Example test:
+
+```php
+public function test_filters_products_by_price_and_status()
+{
+    $filters = [
+        'price' => ['value' => [100, 500], 'operator' => 'between', 'type' => 'float'],
+        'is_active' => ['value' => true, 'operator' => '=', 'type' => 'boolean'],
+    ];
+
+    $products = Product::applySmartFilters($filters)->get();
+
+    $this->assertTrue($products->every(fn($p) => $p->is_active));
+}
+```
+
+---
+
+## 🧠 API Reference
+
+### ➤ `scopeApplySmartFilters()`
+
+```php
+public function scopeApplySmartFilters(
+    Builder $query,
+    array $filters = [],
+    array $options = []
+): Builder
+```
+
+### ➤ `scopeFilterFromRequest()`
+
+```php
+public function scopeFilterFromRequest(
+    Builder $query,
+    array $allowedFilters = [],
+    array $options = []
+): Builder
+```
+
+---
+
+## 🧰 Performance Tips
+
+- Use indexed columns for frequent filters
+- Prefer exact (`=`) over `LIKE` for faster queries
+- Limit filters using config: `max_filters`
+- Always paginate large results
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repository.
-2. Clone your fork: `git clone https://github.com/your-username/laravel-smart-search`.
-3. Install dependencies: `composer install`.
-4. Run tests: `composer test`.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
+Contributions are welcome!  
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ---
 
 ## 📄 License
 
-MIT License. See [LICENSE.md](LICENSE.md).
+This package is open-sourced software licensed under the **MIT License**.
 
 ---
 
 <p align="center">
-<strong>Laravel Smart Search</strong> - Intelligent search for intelligent applications.
+<strong>Laravel Smart Filter</strong> — Powerful, Relation-Aware Filtering for Eloquent. ⚡
 </p>
 
 <p align="center">
-<a href="https://github.com/sharifWebDev/sharif-laravel-smart-search">GitHub</a> •
-<a href="https://packagist.org/packages/sharifWebDev/laravel-smart-search">Packagist</a> •
-<a href="https://github.com/sharifWebDev/laravel-smart-search/issues">Issues</a> •
-<a href="https://github.com/sharifWebDev/laravel-smart-search/discussions">Discussions</a>
+<a href="https://github.com/sharifuddin/laravel-smart-filter">GitHub</a> •
+<a href="https://packagist.org/packages/sharifuddin/laravel-smart-filter">Packagist</a> •
+<a href="https://github.com/sharifuddin/laravel-smart-filter/issues">Issues</a> •
+<a href="https://github.com/sharifuddin/laravel-smart-filter/discussions">Discussions</a>
 </p>
-
-```
-````
